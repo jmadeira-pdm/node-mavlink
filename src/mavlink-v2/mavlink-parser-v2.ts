@@ -75,8 +75,8 @@ export class MAVLinkParserV2 extends MAVLinkParserBase {
                 const field_type: string = field[1];
                 const extension_field: boolean = field[2];
                 let field_length;
-                if (field[1][0] === 'c' && field[1].includes('char[')){
-                    field_length = parseInt(field[1].substr(5,2));
+                if (field[1][0] === 'c' && field[1].includes('char[')) {
+                    field_length = parseInt(field[1].substr(5, 2));
                 } else {
                     field_length = message.sizeof(field_type);
                 }
@@ -93,9 +93,9 @@ export class MAVLinkParserV2 extends MAVLinkParserBase {
                     } else { // fully truncated field
                         message[field_name] = 0;
                         start += field_length;
+                    }
                 }
             }
-
             return message;
         } catch (e) {
             throw e;
