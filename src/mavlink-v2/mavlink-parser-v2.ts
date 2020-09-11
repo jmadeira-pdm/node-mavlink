@@ -74,21 +74,25 @@ export class MAVLinkParserV2 extends MAVLinkParserBase {
                 const field_name: string = field[0];
                 const field_type: string = field[1];
                 const extension_field: boolean = field[2];
-                const field_length = message.sizeof(field_type);
+                let field_length;
+                if (field[1][0] === 'c' && field[1].includes('char[')){
+                    field_length = parseInt(field[1].substr(5,2));
+                } else {
+                    field_length = message.sizeof(field_type);
+                }
                 if (payload.length > start + field_length) {
                     message[field_name] = this.read(payload, start, field_type);
                     start += field_length;
                 } else {
-                    if (payload.readUInt8(start) === 0) { // payload truncation (last field was zero)
-                        message[field_name] = 0;
-                        start += field_length;
-                    } else { // append the truncated zero bytes so that we can parse the last field
+                    if (start < payload.length) { // partially truncated field
                         const truncated: Buffer = payload.slice(start);
                         const filler: Buffer = Buffer.alloc(field_length - truncated.length);
                         const buf = Buffer.concat([truncated, filler]);
                         message[field_name] = this.read(buf, 0, field_type);
                         start += field_length;
-                    }
+                    } else { // fully truncated field
+                        message[field_name] = 0;
+                        start += field_length;
                 }
             }
 
@@ -122,6 +126,10 @@ export class MAVLinkParserV2 extends MAVLinkParserBase {
                 return bytes.readDoubleLE(start);
             case "char":
                 return bytes.toString('ascii', start, 1);
+        }
+        if (type.includes('char[')) {
+            console.log('Reading: ', bytes.toString('ascii', start, parseInt(type.substr(5,2))+start), bytes.toString('ascii', start, parseInt(type.substr(5,2))+start).length)
+            return bytes.toString('ascii', start, parseInt(type.substr(5,2))+start);
         }
     }
 }
